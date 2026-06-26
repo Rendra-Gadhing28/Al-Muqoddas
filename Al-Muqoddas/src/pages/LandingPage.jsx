@@ -1041,7 +1041,7 @@ export default function RebanaAlMuqoddas() {
   // Webhook Spreadsheet URL Setup
   const [webhookUrl, setWebhookUrl] = useState(() => {
     const IdPenerapan = AKfycbxiL8o6C5Yn5WrrGITe8FfJYaAnWFgNN_e7FG-Mb_Lfhg3HC4FR2RfOI1uDtEFTtxcoKg;
-    return localStorage.getItem("https://script.google.com/macros/s/AKfycbyGqRJN9a-fEBfOCviQWP99Cu7Aa86XeyvGzXVB-ecdaHe2rYCWYTX4fmK4tXdp6tnBFQ/exec") || "https://script.google.com/macros/s/AKfycbxiL8o6C5Yn5WrrGITe8FfJYaAnWFgNN_e7FG-Mb_Lfhg3HC4FR2RfOI1uDtEFTtxcoKg/exec";
+    return localStorage.getItem("almuqoddas_webhook_url") || "https://script.google.com/macros/s/AKfycbxiL8o6C5Yn5WrrGITe8FfJYaAnWFgNN_e7FG-Mb_Lfhg3HC4FR2RfOI1uDtEFTtxcoKg/exec";
   });
   const [showWebhookSettings, setShowWebhookSettings] = useState(false);
 
