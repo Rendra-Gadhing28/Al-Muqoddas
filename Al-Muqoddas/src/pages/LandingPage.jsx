@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import al from "../assets/header-rebana.webp";
 import logo from "../../public/logo-rebana.svg"
 
+
 /* ═══════════════════════════════════════════════════════
    REBANA AL-MUQODDAS  — v7
    Perubahan & Penyempurnaan:
@@ -599,6 +600,7 @@ body{
   margin-bottom: 0.25rem;
   text-align: center;
   line-height: 1.25;
+  text-transform: capitalize;
 }
 .mc-kelas {
   font-size: 0.65rem;
@@ -618,10 +620,11 @@ body{
   color: var(--s5);
   line-height: 1.45;
   text-align: center;
-  border-left: none;
-  padding-left: 0;
-  position: relative;
   padding: 0 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .id-div {
@@ -936,24 +939,9 @@ body{
 }
 `;
 
+
 /* ─── DATA ─── */
-const MEMBERS = [
-  {id:1,name:"Rendra Gadhing Pamungkas",kelas:"XII PPLG 3",quote:"Menabuh rebana adalah doa yang berbunyi."},
-  {id:2,name:"Azis Prasetya W.",kelas:"XII TJKT 1",quote:"Setiap ketukan adalah syukur yang berirama."},
-  {id:3,name:"M. Rafa Alvaro",kelas:"XII TJKT 1",quote:"Setiap ketukan adalah syukur yang berirama."},
-  {id:4,name:"Rafif Aditama",kelas:"XII TJKT 2",quote:"Seni islami mengangkat jiwa menuju cahaya."},
-  {id:5,name:"Finza Risqi",kelas:"XI PPLG 3",quote:"Musik yang baik mendekatkan kita pada Tuhan."},
-  {id:6,name:"M. Zidan",kelas:"XI PPLG 3",quote:"Bersama Al-Muqoddas, kami merawat warisan leluhur."},
-  {id:7,name:"Rizki Tirta",kelas:"XI PS 2",quote:"Rebana mengajarkan harmoni dalam perbedaan."},
-  {id:8,name:"Arya Bimo",kelas:"XI DKV 2",quote:"Rebana mengajarkan harmoni dalam perbedaan."},
-  {id:9,name:"Fatih",kelas:"XI TJKT 1",quote:"Rebana mengajarkan harmoni dalam perbedaan."},
-  {id:10,name:"Nasywa",kelas:"XII LK 2",quote:"Setiap latihan adalah perjalanan menuju sempurna."},
-  {id:11,name:"Kasih Azzahra",kelas:"XII LK 2",quote:"Di sini saya menemukan ketenangan dan persaudaraan."},
-  {id:12,name:"Ardiena Najwa",kelas:"XII DKV 2",quote:"Di sini saya menemukan ketenangan dan persaudaraan."},
-  {id:13,name:"Fabryeka Imanda S.",kelas:"XI DKV 3",quote:"Di sini saya menemukan ketenangan dan persaudaraan."},
-  {id:14,name:"Cindy",kelas:"XI PPLG 2",quote:"Di sini saya menemukan ketenangan dan persaudaraan."},
-  {id:15,name:"Lisa",kelas:"XI TJKT 2",quote:"Di sini saya menemukan ketenangan dan persaudaraan."},
-];
+
 
 const COMMENTS0 = [
   {id:1,text:"Penampilan Al-Muqoddas di acara Haflah kemarin luar biasa! Memukau dan penuh semangat.",time:"2 jam lalu",ini:"AN"},
@@ -998,6 +986,18 @@ const GalPH = ({c}) => (
   </div>
 );
 
+function extractDriveId(url) {
+  if (!url) return null;
+  const match = url.match(/[-\w]{25,}/);
+  return match ? match[0] : null;
+}
+
+function getPhotoUrl(rawUrl) {
+  const id = extractDriveId(rawUrl);
+  if (!id) return null;
+  return `/api/photo?id=${id}`; // lewat proxy Vercel
+}
+
 /* ─── REVEAL HOOK ─── */
 function useReveal(dependency) {
   useEffect(() => {
@@ -1023,6 +1023,31 @@ function useReveal(dependency) {
 export default function RebanaAlMuqoddas() {
   const [menu, setMenu] = useState(false);
   
+const URL = "https://script.google.com/macros/s/AKfycbzDTwHtb-5XgxVREcVxubEZFsQk_cmqpaFQOl_X58P-Ld1fI09uLxWweiRcjSgGosJ6dw/exec"
+const [anggota, setAnggota] = useState([]);
+const [loadingAnggota, setLoadingAnggota] = useState(true);
+
+useEffect(() => {
+  fetch(URL, {
+    method : "GET",
+    redirect: "follow"
+  })
+    .then(res => res.json())
+    .then(json => {
+       console.log("Data dari sheet:", json.data);
+       if (json.status === "success") {
+  const normalized = json.data.map(m => ({
+    ...m,
+    name: m.name.toLowerCase(),
+    kelas: m.kelas.toLowerCase(),
+    photo: getPhotoUrl(m.photo), 
+  }));
+  setAnggota(normalized);
+}
+    })
+    .catch(err => console.error("Gagal fetch anggota:", err))
+    .finally(() => setLoadingAnggota(false));
+}, []);
   // Ambil Komentar dari localStorage jika ada
   const [comments, setComments] = useState(() => {
     try {
@@ -1039,10 +1064,9 @@ export default function RebanaAlMuqoddas() {
   const cid = useRef(comments.length + 1);
 
   // Webhook Spreadsheet URL Setup
-  const [webhookUrl, setWebhookUrl] = useState(() => {
-    const IdPenerapan = AKfycbxiL8o6C5Yn5WrrGITe8FfJYaAnWFgNN_e7FG-Mb_Lfhg3HC4FR2RfOI1uDtEFTtxcoKg;
-    return localStorage.getItem("almuqoddas_webhook_url") || "https://script.google.com/macros/s/AKfycbxiL8o6C5Yn5WrrGITe8FfJYaAnWFgNN_e7FG-Mb_Lfhg3HC4FR2RfOI1uDtEFTtxcoKg/exec";
-  });
+  const [webhookUrl, setWebhookUrl] = useState(
+  "https://script.google.com/macros/s/AKfycbxiL8o6C5Yn5WrrGITe8FfJYaAnWFgNN_e7FG-Mb_Lfhg3HC4FR2RfOI1uDtEFTtxcoKg/exec"
+);
   const [showWebhookSettings, setShowWebhookSettings] = useState(false);
 
   // Modal Pendaftaran State
@@ -1056,7 +1080,7 @@ export default function RebanaAlMuqoddas() {
   const [regStatus, setRegStatus] = useState("idle"); // idle, loading, success, error
 
   // Jalankan scroll reveal hook
-  useReveal(comments.length);
+  useReveal(comments.length + anggota.length);
 
   // Simpan Komentar ke localStorage setiap terjadi perubahan
   useEffect(() => {
@@ -1352,39 +1376,37 @@ export default function RebanaAlMuqoddas() {
               <div className="sdiv"/>
             </div>
             <div className="mgrid">
-              {MEMBERS.map((m,i) => (
-                <div key={m.id} className="badge-holder rv" style={{transitionDelay:`${i*45}ms`}}>
-                  {/* Tali Lanyard & Clip Penjepit */}
-                  <div className="id-strap" />
-                  <div className="id-clip" />
-
-                  {/* ID Card Cardboard */}
-                  <div className="mc">
-                    <div className="id-slot" />
-                    <div className="id-hdr">AL-MUQODDAS · MEMBER</div>
-                    
-                    <div className="id-body">
-                      {/* Foto Anggota Dibuat Jauh Lebih Dominan, Jelas, & Besar */}
-                      <div className="mc-ph">
-                        {m.photo ? (
-                          <img src={m.photo} alt={m.name} />
-                        ) : (
-                          <CamIcon size={32}/>
-                        )}
-                      </div>
-                      <h4 className="mc-name">{m.name}</h4>
-                      <span className="mc-kelas">{m.kelas}</span>
-                      <div className="id-div" />
-                      <p className="mc-q">"{m.quote}"</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  {loadingAnggota ? (
+                          <p style={{ color: "var(--em200)", textAlign: "center", padding: "2rem" }}>
+                            Memuat data anggota...
+                          </p>
+                        ) : anggota.map((m, i) => (
+                          <div key={m.id} className="badge-holder rv" style={{ transitionDelay: `${i * 45}ms` }}>
+                            <div className="id-strap" />
+                            <div className="id-clip" />
+                            <div className="mc">
+                              <div className="id-slot" />
+                              <div className="id-hdr">AL-MUQODDAS · MEMBER</div>
+                              <div className="id-body">
+                                <div className="mc-ph">
+                                  {m.photo ? (
+                                    <img src={m.photo} alt={m.name} referrerPolicy="no-referrer" />
+                                  ) : (
+                                    <CamIcon size={32} />
+                                  )}
+                                </div>
+                                <h4 className="mc-name">{m.name}</h4>
+                                <span className="mc-kelas">{m.kelas}</span>
+                                <div className="id-div" />
+                                <p className="mc-q">"{m.quote}"</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
             </div>
           </div>
         </div>
       </div>
-
       {/* ════ KOMENTAR ════ */}
       <div id="komentar" className="kbg">
         <div className="swrap">
