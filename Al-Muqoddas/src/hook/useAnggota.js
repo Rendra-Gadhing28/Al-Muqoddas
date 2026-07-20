@@ -1,6 +1,6 @@
 import { useState, useEffect} from "react";
 
-const URL = "https://script.google.com/macros/s/AKfycbzDTwHtb-5XgxVREcVxubEZFsQk_cmqpaFQOl_X58P-Ld1fI09uLxWweiRcjSgGosJ6dw/exec"
+const URL = "https://script.google.com/macros/s/AKfycbztcf_COgD4LJlPi6ixSasfBFtAScGkYgZmhqiCkMUX2xiFZsBgbofXaY7_R9ue4cAg/exec"
 
 export function useAnggota(){
     const [anggota, setAnggota] = useState([])

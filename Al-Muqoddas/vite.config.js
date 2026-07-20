@@ -7,11 +7,11 @@ export default defineConfig({
    server: {
     proxy: {
       '/api/sheets': {
-        target: 'https://script.google.com/macros/s/AKfycbxzC5Hv3l-X0q78gW0XVu4LA4AI3ZjXfQmobi2HCjlQqDnZSXVGkGTLJFypMy-0uH5L/exec',
+        target: 'https://script.google.com/macros/s/AKfycbwXca_pg69ssnx6bupPqXoe7Uw-TiFnXtPbst0cW8rOhe0JZUAxhzIaIYmJE-HKix-K/exec',
         changeOrigin: true,
         rewrite: () => '',
         secure: true,
-        followRedirects: true,
+        followRedirects: false,
       }
     }
   }

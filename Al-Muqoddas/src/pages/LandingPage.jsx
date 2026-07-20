@@ -2,23 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import al from "../assets/header-rebana.webp";
 import logo from "../../public/logo-rebana.svg"
 import istiqomah from "../assets/header-rebana.webp";
-
-
-/* ═══════════════════════════════════════════════════════
-   REBANA AL-MUQODDAS  — v7
-   Perubahan & Penyempurnaan:
-   • Pembuatan Hamburger & Drawer Menu Mobile yang Responsif dan Animasi "X" yang Sempurna
-   • Menambahkan Drawer Overlay (Backdrop buram ketika menu drawer aktif)
-   • Desain ID Card Anggota dibersihkan: Barcode dan Status Aktif dihapus
-   • Foto Anggota dibuat jauh lebih dominan, jelas, dan besar (ukuran pasfoto passport)
-   • Layout Full-Bleed: Semua section dibuat full-width mentok ke tepi layar
-   • Rotasi lingkaran dekoratif & animasi gspin di halaman home dihapus
-   • Foto Hero diposisikan secara relatif & responsif dengan rasio 16:9 yang lebar
-   • Integrasi Google Sheets Webhook (POST & GET) dengan input URL dinamis
-   • Penyimpanan Komentar lokal di localStorage agar persisten
-   • Opsi Input Nama pada form komentar (semi-anonim)
-   • Modal Pendaftaran Anggota yang terhubung ke Webhook
-═══════════════════════════════════════════════════════ */
+import gema from "../assets/perform/GEMA.jpeg"
+import latian_kolaborasi from "../assets/perform/Latian_kolaborasi.jpeg"
+import ldk from "../assets/perform/ldk_rohis.jpeg"
+import pelita from "../assets/perform/pelita.jpeg"
+import uswah from "../assets/perform/uswah.jpeg"
+import rutinan from "../assets/perform/kegiatan_rutin.jpeg"
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
@@ -952,10 +941,13 @@ const COMMENTS0 = [
 ];
 
 const GALLERY = [
-  {id:1,cap:"Maulid Nabi 2025",c:"#1B5C40"},{id:2,cap:"Haflah Al-Quran",c:"#2D7A56"},
-  {id:3,cap:"Festival Budaya",c:"#14432F"},{id:4,cap:"Pesantren Kilat",c:"#0D2B1E"},
-  {id:5,cap:"Perpisahan XII",c:"#1B5C40"},{id:6,cap:"HUT SMKN 8",c:"#2D7A56"},
-  {id:7,cap:"Isra Mi'raj 2025",c:"#14432F"},{id:8,cap:"Bazar Ramadan",c:"#3A9E6F"},
+  {id:1,cap:"Latihan Kolaborasi SMK 4",c:"#1B5C40", foto : latian_kolaborasi},
+  {id:2,cap:"Isra' Mi'raj 2025",c:"#2D7A56", foto : uswah},
+  {id:3,cap:"Rutinan",c:"#14432F", foto : rutinan},
+  {id:4,cap:"Pesantren Ramadhan 2025",c:"#0D2B1E", foto : gema},
+  {id:5,cap:"Maulid Nabi 2025",c:"#1B5C40", foto : pelita},
+  {id:6,cap:"LDK Rohis",c:"#1B5C40", foto : ldk},
+
 ];
 
 /* ─── ICONS ─── */
@@ -1023,62 +1015,121 @@ function useReveal(dependency) {
 /* ─── COMPONENT ─── */
 export default function RebanaAlMuqoddas() {
   const [menu, setMenu] = useState(false);
-  const IdPenerepan = "AKfycbxzC5Hv3l-X0q78gW0XVu4LA4AI3ZjXfQmobi2HCjlQqDnZSXVGkGTLJFypMy-0uH5L"
+  const IdPenerepan = "AKfycbxzC5Hv3l-X0q78gW0XVu4LA4AI3ZjXfQmobi2HCjlQqDnZSXVGkGTLJFypMy-0uH5L";
   const [err, setErr] = useState(null);
-const URL = import.meta.env.DEV 
-  ? "https://script.google.com/macros/s/AKfycbxzC5Hv3l-X0q78gW0XVu4LA4AI3ZjXfQmobi2HCjlQqDnZSXVGkGTLJFypMy-0uH5L/exec": "/api/sheets"  // pakai proxy saat localhost
-const [anggota, setAnggota] = useState([]);
-const wali = [
-  {
-    nama : "Istiqomah S.Ag",
-    Jabatan : "Pembina",
-    Url : istiqomah
-  }
-]
-const [loadingAnggota, setLoadingAnggota] = useState(true);
 
-useEffect(() => {
-  fetch(URL, {
-    method : "GET",
-    redirect: "follow",
-  })
-    .then(res => {
-      console.log("Status:", res.status, "URL:", res.url); // cek kemana redirect
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(`Bukan JSON, dapat: ${contentType}`);
-      }
-      return res.json();
-    })
-    .then(json => {
-       console.log("Data dari sheet:", json.data);
-      if(json.data && Array.isArray(json.data)) {
+  // Jika menggunakan Proxy Vite saat Dev, balik logika URL ini:
+  const URL = import.meta.env.DEV 
+    ? "/api/sheets" // Gunakan Proxy Vite di Localhost agar tidak kena CORS
+    : "https://script.google.com/macros/s/AKfycbwXca_pg69ssnx6bupPqXoe7Uw-TiFnXtPbst0cW8rOhe0JZUAxhzIaIYmJE-HKix-K/exec";
 
-       if (json.data.length === 0) {
-        setErr("Data sheet sedang kosong");
+  const [anggota, setAnggota] = useState([]);
+  const wali = [
+    {
+      nama: "Istiqomah S.Ag",
+      Jabatan: "Pembina",
+      Url: istiqomah
+    }
+  ];
+  const [loadingAnggota, setLoadingAnggota] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoadingAnggota(true);
+      setErr(null);
+      
+      try {
+        console.log("Fetching from:", URL);
+        
+        // Hapus 'headers' dan 'mode' agar tidak memicu Preflight OPTIONS request
+        const response = await fetch(URL);
+
+        console.log("Response Status:", response.status);
+        console.log("Response URL:", response.url);
+        
+        // Cek status response
+        if (!response.ok) {
+          throw new Error(`HTTP Error! Status: ${response.status} - ${response.statusText}`);
+        }
+        
+        // Cek content-type
+        const contentType = response.headers.get("content-type");
+        console.log("Content-Type:", contentType);
+        
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error(`Response bukan JSON! Content-Type: ${contentType}`);
+        }
+        
+        // Parse JSON
+        const json = await response.json();
+        console.log("Data dari sheet:", json);
+        
+        // Validasi struktur response
+        if (!json || json.status !== "success") {
+          throw new Error(json?.message || "Status response tidak success");
+        }
+        
+        // Validasi data
+        if (!json.data || !Array.isArray(json.data)) {
+          setErr("Format data sheet tidak valid");
+          setAnggota([]);
+          return;
+        }
+        
+        // Cek data kosong
+        if (json.data.length === 0) {
+          setErr("Data sheet sedang kosong");
+          setAnggota([]);
+          return;
+        }
+        
+        // Normalisasi data
+        const normalized = json.data.map((m, index) => ({
+          ...m,
+          id: m.id || index + 1,
+          name: (m.name || "").toLowerCase(),
+          kelas: (m.kelas || "").toLowerCase(),
+          quote: m.quote || "Bersama Al-Muqoddas, kami merawat warisan leluhur.",
+          photo: getPhotoUrl(m.photo), 
+        }));
+        
+        console.log("Normalized data:", normalized);
+        
+        setAnggota(normalized);
+        setErr(null);
+        
+      } catch (error) {
+        console.error("Gagal fetch anggota:", error);
+        setErr(error.message || "Gagal mengambil data");
         setAnggota([]);
+        
+        flash("Gagal memuat data anggota");
+        
+      } finally {
         setLoadingAnggota(false);
-        return;
       }
+    };
 
-  const normalized = json.data.map(m => ({
-    ...m,
-    name: m.name.toLowerCase(),
-    kelas: m.kelas.toLowerCase(),
-    photo: getPhotoUrl(m.photo), 
-  }));
-  setAnggota(normalized);
-  setErr('');
+    fetchData();
+  }, []);// Dependency array kosong = jalan sekali saat mount
+
+// Definisikan getPhotoUrl di luar useEffect
+function getPhotoUrl(photo) {
+  if (!photo) return "/default-avatar.jpg"; // Fallback image
+  
+  // Jika sudah URL lengkap
+  if (photo.startsWith("http")) {
+    return photo;
+  }
+  
+  // Jika hanya ID Drive
+  if (photo.match(/^[a-zA-Z0-9_-]{25,}$/)) {
+    return `https://drive.google.com/thumbnail?id=${photo}&sz=w400`;
+  }
+  
+  return photo;
 }
-else {
-  setErr("Format data sheet tidak valid");
-  setAnggota([]);
-  setLoadingAnggota(false);
-}
-    })
-    .catch(err => console.error("Gagal fetch anggota:", err))
-    .finally(() => setLoadingAnggota(false));
-}, []);
+
   // Ambil Komentar dari localStorage jika ada
   const [comments, setComments] = useState(() => {
     try {
@@ -1096,7 +1147,7 @@ else {
 
   // Webhook Spreadsheet URL Setup
   const [webhookUrl, setWebhookUrl] = useState(
-  "https://script.google.com/macros/s/AKfycbxiL8o6C5Yn5WrrGITe8FfJYaAnWFgNN_e7FG-Mb_Lfhg3HC4FR2RfOI1uDtEFTtxcoKg/exec"
+  "https://script.google.com/macros/s/AKfycbylR02HVul7SljYbgkULvK4onBuXDQ-L3IxoeBYHpdQPRYVFXMdWTvwTE2zxdY-VIY9/exec"
 );
   const [showWebhookSettings, setShowWebhookSettings] = useState(false);
 
@@ -1364,7 +1415,7 @@ else {
                               <div className="id-body">
                                 <div className="mc-ph">
                                   {m.photo ? (
-                                    <img src={m.photo} alt={m.name} referrerPolicy="no-referrer" />
+                                    <img src={m.photo} alt={m.name} height="100"  referrerPolicy="no-referrer" />
                                   ) : (
                                     <CamIcon size={32} />
                                   )}
@@ -1395,12 +1446,7 @@ else {
               <div className="kform rv">
                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:".3rem"}}>
                   <h3>Tinggalkan Pesan</h3>
-                  <button className="webhook-btn" onClick={() => setShowWebhookSettings(!showWebhookSettings)} title="Webhook Spreadsheet Setup">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3"/>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
-                  </button>
+                  
                 </div>
                 <p>Bagikan kesan dan pendapatmu. Hubungkan ke Google Sheets dengan mengklik tombol gir di atas jika Anda admin.</p>
                 
@@ -1481,7 +1527,9 @@ else {
             <div className="pgrid">
               {GALLERY.map((g,i) => (
                 <div key={g.id} className="pol rv" style={{transitionDelay:`${i*60}ms`}}>
-                  <div className="pol-img"><GalPH c={g.c}/></div>
+                  <div className="pol-img">
+                    <img src={g.foto} alt={g.cap} srcset="" />
+                  </div>
                   <p className="pol-cap">{g.cap}</p>
                 </div>
               ))}
