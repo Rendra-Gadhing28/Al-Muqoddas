@@ -162,6 +162,13 @@ export default function RebanaAlMuqoddas() {
     return photo;
   }
 
+  function getDriveImageUrl(driveUrl) {
+  const match = driveUrl.match(/[-\w]{25,}/);
+  if (!match) return driveUrl;
+  const fileId = match[0];
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+}
+
   const [comments, setComments] = useState(() => {
     try {
       const s = localStorage.getItem("almuqoddas_comments");
@@ -497,7 +504,7 @@ export default function RebanaAlMuqoddas() {
             <div key={i} className="pembina-card-layout parchment-card rv">
               <div className="pembina-img-box">
                 <div className="pembina-img-inner">
-                  <img src={w.Url} alt={w.nama} 
+                  <img src={getDriveImageUrl(w.Url)} alt={w.nama} 
                   style={{
                     objectFit : "cover", 
                     height : "100%"
