@@ -497,7 +497,11 @@ export default function RebanaAlMuqoddas() {
             <div key={i} className="pembina-card-layout parchment-card rv">
               <div className="pembina-img-box">
                 <div className="pembina-img-inner">
-                  <img src={w.Url} alt={w.nama} />
+                  <img src={w.Url} alt={w.nama} 
+                  style={{
+                    objectFit : "cover", 
+                    height : "100%"
+                  }} />
                 </div>
               </div>
               <div className="pembina-quote-box">
