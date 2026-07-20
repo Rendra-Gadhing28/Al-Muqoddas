@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import al from "../assets/header-rebana.webp";
 import logo from "../../public/logo-rebana.svg"
+import istiqomah from "../assets/header-rebana.webp";
 
 
 /* ═══════════════════════════════════════════════════════
@@ -1022,20 +1023,44 @@ function useReveal(dependency) {
 /* ─── COMPONENT ─── */
 export default function RebanaAlMuqoddas() {
   const [menu, setMenu] = useState(false);
-  
-const URL = "https://script.google.com/macros/s/AKfycbzDTwHtb-5XgxVREcVxubEZFsQk_cmqpaFQOl_X58P-Ld1fI09uLxWweiRcjSgGosJ6dw/exec"
+  const IdPenerepan = "AKfycbxzC5Hv3l-X0q78gW0XVu4LA4AI3ZjXfQmobi2HCjlQqDnZSXVGkGTLJFypMy-0uH5L"
+  const [err, setErr] = useState(null);
+const URL = import.meta.env.DEV 
+  ? "https://script.google.com/macros/s/AKfycbxzC5Hv3l-X0q78gW0XVu4LA4AI3ZjXfQmobi2HCjlQqDnZSXVGkGTLJFypMy-0uH5L/exec": "/api/sheets"  // pakai proxy saat localhost
 const [anggota, setAnggota] = useState([]);
+const wali = [
+  {
+    nama : "Istiqomah S.Ag",
+    Jabatan : "Pembina",
+    Url : istiqomah
+  }
+]
 const [loadingAnggota, setLoadingAnggota] = useState(true);
 
 useEffect(() => {
   fetch(URL, {
     method : "GET",
-    redirect: "follow"
+    redirect: "follow",
   })
-    .then(res => res.json())
+    .then(res => {
+      console.log("Status:", res.status, "URL:", res.url); // cek kemana redirect
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(`Bukan JSON, dapat: ${contentType}`);
+      }
+      return res.json();
+    })
     .then(json => {
        console.log("Data dari sheet:", json.data);
-       if (json.status === "success") {
+      if(json.data && Array.isArray(json.data)) {
+
+       if (json.data.length === 0) {
+        setErr("Data sheet sedang kosong");
+        setAnggota([]);
+        setLoadingAnggota(false);
+        return;
+      }
+
   const normalized = json.data.map(m => ({
     ...m,
     name: m.name.toLowerCase(),
@@ -1043,6 +1068,12 @@ useEffect(() => {
     photo: getPhotoUrl(m.photo), 
   }));
   setAnggota(normalized);
+  setErr('');
+}
+else {
+  setErr("Format data sheet tidak valid");
+  setAnggota([]);
+  setLoadingAnggota(false);
 }
     })
     .catch(err => console.error("Gagal fetch anggota:", err))
@@ -1199,72 +1230,6 @@ useEffect(() => {
     }
   };
 
-  // Kirim Pendaftaran Anggota (Webhook / Simpan Lokal)
-  const submitRegistration = async (e) => {
-    e.preventDefault();
-    if (!regForm.nama.trim()) return;
-
-    setRegStatus("loading");
-
-    if (webhookUrl) {
-      try {
-        const payload = {
-          action: "register",
-          nama: regForm.nama,
-          kelas: regForm.kelas,
-          kontak: regForm.kontak,
-          catatan: regForm.catatan
-        };
-
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        setRegStatus("success");
-        flash("Pendaftaran berhasil terkirim ke Spreadsheet!");
-        setTimeout(() => {
-          setShowRegModal(false);
-          setRegForm({ nama: "", kelas: "", kontak: "", catatan: "" });
-          setRegStatus("idle");
-        }, 2000);
-      } catch (err) {
-        console.error("Gagal mengirim pendaftaran ke webhook:", err);
-        setRegStatus("error");
-        flash("Gagal mengirim ke server. Menyimpan secara lokal...");
-        saveLocalRegistration();
-      }
-    } else {
-      saveLocalRegistration();
-    }
-  };
-
-  const saveLocalRegistration = () => {
-    try {
-      const currentList = JSON.parse(localStorage.getItem("almuqoddas_registrations") || "[]");
-      currentList.push({
-        id: Date.now(),
-        ...regForm,
-        date: new Date().toISOString()
-      });
-      localStorage.setItem("almuqoddas_registrations", JSON.stringify(currentList));
-      
-      setRegStatus("success");
-      flash("Pendaftaran disimpan lokal! (Offline)");
-      setTimeout(() => {
-        setShowRegModal(false);
-        setRegForm({ nama: "", kelas: "", kontak: "", catatan: "" });
-        setRegStatus("idle");
-      }, 2000);
-    } catch (e) {
-      setRegStatus("error");
-      flash("Gagal memproses pendaftaran lokal.");
-    }
-  };
-
   return (
     <>
       <style>{CSS}</style>
@@ -1380,6 +1345,15 @@ useEffect(() => {
                           <p style={{ color: "var(--em200)", textAlign: "center", padding: "2rem" }}>
                             Memuat data anggota...
                           </p>
+                        ) : err ? (
+                          <p className="text-center text-gray-500">{err}</p>
+                        ) : anggota.length === 0 ? (
+                          <p className="" style={{
+                            textAlign: "center", 
+                            color : "red", 
+                            fontFamily : "monospace", 
+                            fontWeight : "lighter"
+                          }}>Data Anggota Masih Kosong</p>
                         ) : anggota.map((m, i) => (
                           <div key={m.id} className="badge-holder rv" style={{ transitionDelay: `${i * 45}ms` }}>
                             <div className="id-strap" />
