@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
    server: {
+    host: true,
     proxy: {
       '/api/sheets': {
         target: 'https://script.google.com/macros/s/AKfycbwXca_pg69ssnx6bupPqXoe7Uw-TiFnXtPbst0cW8rOhe0JZUAxhzIaIYmJE-HKix-K/exec',
