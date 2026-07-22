@@ -163,16 +163,29 @@ export default function RebanaAlMuqoddas() {
   }
 
   function getDriveImageUrl(driveUrl) {
-    if (!url) return "";
-  
-    // Ekstrak ID file dari URL thumbnail drive
-    const match = url.match(/id=([a-zA-Z0-9_-]+)/);
-    if (!match || !match[1]) return url; // Balikkan URL asli jika tidak cocok
-  
-    const fileId = match[1];
-  
-  // Ubah ke format CDN Google yang anti-blokir Vercel
-  return `https://lh3.googleusercontent.com/d/${fileId}=w800`;
+      if (!driveUrl) return "";
+
+  try {
+    // 1. Jika URL menggunakan format query param (?id=xxxx)
+    const urlObj = new URL(driveUrl);
+    const fileId = urlObj.searchParams.get("id");
+
+    if (fileId) {
+      return `https://lh3.googleusercontent.com/d/${fileId}=w800`;
+    }
+  } catch (e) {
+    // Abaikan jika string bukan URL valid, lanjut ke fallback RegEx
+  }
+
+  // 2. Fallback jika format URL langsung file/d/FILE_ID/view
+  const match = driveUrl.match(/[-\w]{25,}/);
+  if (match) {
+    return `https://lh3.googleusercontent.com/d/${match[0]}=w800`;
+  }
+
+  console.log(`[getDriveImageUrl] Tidak dapat mengekstrak ID dari URL: ${driveUrl}`);
+
+  return driveUrl;
 }
 
   const [comments, setComments] = useState(() => {
@@ -510,7 +523,7 @@ export default function RebanaAlMuqoddas() {
             <div key={i} className="pembina-card-layout parchment-card rv">
               <div className="pembina-img-box">
                 <div className="pembina-img-inner">
-                  <img src={getDriveImageUrl(w.Url)} alt={w.nama} referrerPolicy="no-referrer"
+                  <img src={w.Url} alt={w.nama} referrerPolicy="no-referrer"
                   style={{
                     objectFit : "cover", 
                     height : "100%"
