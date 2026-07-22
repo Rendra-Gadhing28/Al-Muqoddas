@@ -163,10 +163,16 @@ export default function RebanaAlMuqoddas() {
   }
 
   function getDriveImageUrl(driveUrl) {
-  const match = driveUrl.match(/[-\w]{25,}/);
-  if (!match) return driveUrl;
-  const fileId = match[0];
-  return `https://lh3.googleusercontent.com/d/${match[0]}=w800`;
+    if (!url) return "";
+  
+    // Ekstrak ID file dari URL thumbnail drive
+    const match = url.match(/id=([a-zA-Z0-9_-]+)/);
+    if (!match || !match[1]) return url; // Balikkan URL asli jika tidak cocok
+  
+    const fileId = match[1];
+  
+  // Ubah ke format CDN Google yang anti-blokir Vercel
+  return `https://lh3.googleusercontent.com/d/${fileId}=w800`;
 }
 
   const [comments, setComments] = useState(() => {
