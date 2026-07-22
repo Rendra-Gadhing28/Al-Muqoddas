@@ -95,7 +95,7 @@ export default function RebanaAlMuqoddas() {
 
   const API_URL = import.meta.env.DEV
     ? "/api/sheets"
-    : "https://script.google.com/macros/s/AKfycbwXca_pg69ssnx6bupPqXoe7Uw-TiFnXtPbst0cW8rOhe0JZUAxhzIaIYmJE-HKix-K/exec";
+    : "https://script.google.com/macros/s/AKfycbzOPmeOPxlKXw5B6gHVdSI-EW4KggHdoq21hxC5twQe0bZg8MytHhVljwcqFfrdevp7/exec";
 
   const [anggota, setAnggota] = useState([]);
   const wali = [{ nama: "Istiqomah S.Ag", Jabatan: "Pembina", Url: istiqomah }];
@@ -142,8 +142,9 @@ export default function RebanaAlMuqoddas() {
           id: m.id || i + 1,
           name: (m.name || "").toLowerCase(),
           kelas: (m.kelas || "").toLowerCase(),
+          reason : (m.reason || ""),
           quote: m.quote || "Bersama Al-Muqoddas, kami merawat warisan leluhur.",
-          photo: getPhotoUrl(m.photo),
+          photo: getDriveImageUrl(m.photo),
         })));
       } catch (e) {
         setErr(e.message || "Gagal mengambil data");
