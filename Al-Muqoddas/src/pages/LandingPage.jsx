@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import "./LandingPage.css";
 import al from "../assets/header-rebana.webp";
-import istiqomah from "../assets/header-rebana.webp";
+import istiqomah from "../assets/pembina.jpeg";
 import gema from "../assets/perform/GEMA.jpeg";
 import latian_kolaborasi from "../assets/perform/Latian_kolaborasi.jpeg";
 import ldk from "../assets/perform/ldk_rohis.jpeg";
@@ -158,7 +158,7 @@ export default function RebanaAlMuqoddas() {
   function getPhotoUrl(photo) {
     if (!photo) return null;
     if (photo.startsWith("http")) return photo;
-    if (/^[a-zA-Z0-9_-]{25,}$/.test(photo)) return `https://drive.google.com/thumbnail?id=${photo}&sz=w400`;
+    if (/^[a-zA-Z0-9_-]{25,}$/.test(photo)) return `https://lh3.googleusercontent.com/d/${match[0]}=w800`;
     return photo;
   }
 
@@ -166,7 +166,7 @@ export default function RebanaAlMuqoddas() {
   const match = driveUrl.match(/[-\w]{25,}/);
   if (!match) return driveUrl;
   const fileId = match[0];
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+  return `https://lh3.googleusercontent.com/d/${match[0]}=w800`;
 }
 
   const [comments, setComments] = useState(() => {
@@ -181,7 +181,7 @@ export default function RebanaAlMuqoddas() {
   const [commentName, setCommentName] = useState("");
   const [toast, setToast] = useState({ on: false, msg: "" });
   const cid = useRef(comments.length + 1);
-  const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem("almuqoddas_webhook_url") || "https://script.google.com/macros/s/AKfycbylR02HVul7SljYbgkULvK4onBuXDQ-L3IxoeBYHpdQPRYVFXMdWTvwTE2zxdY-VIY9/exec");
+  const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem("almuqoddas_webhook_url") || "-");
   const [showWebhook, setShowWebhook] = useState(false);
   const [showRegModal, setShowRegModal] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
@@ -504,7 +504,7 @@ export default function RebanaAlMuqoddas() {
             <div key={i} className="pembina-card-layout parchment-card rv">
               <div className="pembina-img-box">
                 <div className="pembina-img-inner">
-                  <img src={getDriveImageUrl(w.Url)} alt={w.nama} 
+                  <img src={getDriveImageUrl(w.Url)} alt={w.nama} referrerPolicy="no-referrer"
                   style={{
                     objectFit : "cover", 
                     height : "100%"
