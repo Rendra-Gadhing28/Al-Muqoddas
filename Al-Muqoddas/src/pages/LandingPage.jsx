@@ -95,7 +95,7 @@ export default function RebanaAlMuqoddas() {
 
   const API_URL = import.meta.env.DEV
     ? "/api/sheets"
-    : "https://script.google.com/macros/s/AKfycbzOPmeOPxlKXw5B6gHVdSI-EW4KggHdoq21hxC5twQe0bZg8MytHhVljwcqFfrdevp7/exec";
+    : "https://script.google.com/macros/s/AKfycby9rQjFfYXiKyW-3JhqgwyblhdYOTyUVR0kwjSyAlPNCWAZ7eviu2xL5YWlE0L7fF52/exec";
 
   const [anggota, setAnggota] = useState([]);
   const wali = [{ nama: "Istiqomah S.Ag", Jabatan: "Pembina", Url: istiqomah }];
@@ -164,27 +164,18 @@ export default function RebanaAlMuqoddas() {
   }
 
   function getDriveImageUrl(driveUrl) {
-      if (!driveUrl) return "";
+        if (!driveUrl) return "";
 
-  try {
-    // 1. Jika URL menggunakan format query param (?id=xxxx)
-    const urlObj = new URL(driveUrl);
-    const fileId = urlObj.searchParams.get("id");
+  // Ambil ID dari param ?id=
+  const match = driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
+  const fileId = match ? match[1] : null;
 
-    if (fileId) {
-      return `https://lh3.googleusercontent.com/d/${fileId}=w400`;
-    }
-  } catch (e) {
-    // Abaikan jika string bukan URL valid, lanjut ke fallback RegEx
+  if (fileId) {
+    // Format uc?export=view sering kali lolos di Vercel jika dipadu referrerPolicy
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
   }
 
-  // 2. Fallback jika format URL langsung file/d/FILE_ID/view
-  const match = driveUrl.match(/[-\w]{25,}/);
-  if (match) {
-    return `https://lh3.googleusercontent.com/d/${match[0]}=w400`;
-  }
-
-  console.log(`[getDriveImageUrl] Tidak dapat mengekstrak ID dari URL: ${driveUrl}`);
+  console.warn("Tidak dapat mengekstrak ID dari URL Google Drive:", driveUrl);
 
   return driveUrl;
 }
@@ -201,11 +192,13 @@ export default function RebanaAlMuqoddas() {
   const [commentName, setCommentName] = useState("");
   const [toast, setToast] = useState({ on: false, msg: "" });
   const cid = useRef(comments.length + 1);
-  const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem("almuqoddas_webhook_url") || "-");
+  const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem("almuqoddas_webhook_url") || "https://script.google.com/macros/s/AKfycby9rQjFfYXiKyW-3JhqgwyblhdYOTyUVR0kwjSyAlPNCWAZ7eviu2xL5YWlE0L7fF52/exec");
   const [showWebhook, setShowWebhook] = useState(false);
   const [showRegModal, setShowRegModal] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const [revealed, setRevealed] = useState({ home: true });
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [students, setStudents] = useState([]);
 
   useEffect(() => {
     const io = new IntersectionObserver(
@@ -241,30 +234,45 @@ export default function RebanaAlMuqoddas() {
     }
   };
 
-  const fetchComments = async (url) => {
+    // Disarankan mengirimkan studentId agar komentar dipisah sesuai orangnya
+  const fetchComments = async (url, studentId) => {
     if (!url) return;
     try {
-      const res = await fetch(`${url}?sheet=komentar`);
+      
+      const queryId = studentId ? `&pendaftar_id=${studentId}` : "";
+      const res = await fetch(`${url}?action=getComments${queryId}`);
       const data = await res.json();
-      if (data.status === "success" && Array.isArray(data.data))
-        setComments(data.data.map(i => ({
-          timestamp: i.tanggal || Date.now(),
-          id: i.id || cid.current++,
-          name: (i.nama || "AN").substring(0, 2).toUpperCase(),
-          pesan: i.pesan || "",
-          time: formatTime(i.tanggal),
-        })));
-    } catch {}
+
+      if (data.status === "success" && Array.isArray(data.data)) {
+        setComments(
+          data.data.map((i) => {
+            // Mengambil nama dari API (Fallback ke i.name atau i.nama)
+            const rawName = i.name || i.nama || "AN";
+            return {
+              timestamp: i.timestamp || Date.now(),
+              id: i.id || cid.current++,
+              name: rawName.substring(0, 2).toUpperCase(), // Inisial 2 huruf
+              pesan: i.pesan || "",
+              time: i.tanggal ? formatTime(i.tanggal) : "Baru saja",
+            };
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Gagal memuat komentar:", err);
+    }
   };
 
   useEffect(() => {
-    if (webhookUrl) fetchComments(webhookUrl);
-  }, [webhookUrl]);
+    // Jalankan fetch jika webhookUrl tersedia (dan sertakan ID pendaftar jika ada)
+    if (webhookUrl) fetchComments(webhookUrl, selectedStudentId);
+  }, [webhookUrl, selectedStudentId]);
 
   const go = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
     setMenu(false);
   };
+
   const flash = (msg) => {
     setToast({ on: true, msg });
     setTimeout(() => setToast({ on: false, msg: "" }), 3200);
@@ -272,21 +280,38 @@ export default function RebanaAlMuqoddas() {
 
   const submitComment = async () => {
     if (!draft.trim()) return;
-    const name = commentName.trim() || "Anonim";
-    const ini = name.substring(0, 2).toUpperCase();
-    setComments(p => [{ id: cid.current++, pesan: draft.trim(), time: "Baru saja", name: ini }, ...p]);
+
+    const rawName = commentName.trim() || "Anonim";
+    const ini = rawName.substring(0, 2).toUpperCase();
+    const commentText = draft.trim();
+
+    // 1. Optimistic UI Update (Tampilkan dulu di frontend)
+    setComments((p) => [
+      { id: cid.current++, pesan: commentText, time: "Baru saja", name: ini },
+      ...p,
+    ]);
+
     setDraft("");
     setCommentName("");
+
+    // 2. Kirim data ke Backend Google Apps Script
     if (webhookUrl) {
       try {
         await fetch(webhookUrl, {
           method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ action: "addComment", nama: name, pesan: draft.trim() })
+          headers: { "Content-Type": "text/plain;charset=utf-8" }, // Hindari CORS preflight
+          body: JSON.stringify({
+            action: "addComment",
+            id: selectedStudentId, // WAJIB: ID Pendaftar yang dikomentari
+            name: rawName,          // Menggunakan 'name' sesuai Apps Script
+            pesan: commentText,
+          }),
         });
+
         flash("Komentar terkirim!");
-        setTimeout(() => fetchComments(webhookUrl), 1000);
-      } catch {
+        // Fetch ulang setelah 1 detik untuk sinkronisasi tanggal/data dari sheet
+        setTimeout(() => fetchComments(webhookUrl, selectedStudentId), 1000);
+      } catch (err) {
         flash("Komentar disimpan lokal");
       }
     } else {
@@ -586,80 +611,132 @@ export default function RebanaAlMuqoddas() {
       </section>
 
       {/* ── KOMENTAR / KESAN ── */}
-      <section id="komentar" className={`sec-spacing section-dark${revealed.komentar ? " vis" : ""}`}>
-        <div className="pattern-overlay" />
-        <div className="section-inner">
-          <div className="sec-header rv">
-            <span className="sec-eyebrow">04 · Kesan &amp; Pesan</span>
-            <h2 className="sec-title text-engraved-light">Kesan &amp; Apresiasi</h2>
-            <div className="sec-divider">
-              <span className="sec-divider-line" />
-              <span className="sec-divider-ornament">✦</span>
-              <span className="sec-divider-line rev" />
-            </div>
-            <p className="sec-desc-text text-engraved-light">Bagikan apresiasi dan tanggapanmu. Setiap kata adalah semangat bagi syiar kami.</p>
-          </div>
+            <section id="komentar" className={`sec-spacing section-dark${revealed.komentar ? " vis" : ""}`}>
+  <div className="pattern-overlay" />
+  <div className="section-inner">
+    <div className="sec-header rv">
+      <span className="sec-eyebrow">04 · Kesan &amp; Pesan</span>
+      <h2 className="sec-title text-engraved-light">Kesan &amp; Apresiasi</h2>
+      <div className="sec-divider">
+        <span className="sec-divider-line" />
+        <span className="sec-divider-ornament">✦</span>
+        <span className="sec-divider-line rev" />
+      </div>
+      <p className="sec-desc-text text-engraved-light">
+        Bagikan apresiasi dan tanggapanmu. Setiap kata adalah semangat bagi syiar kami.
+      </p>
+    </div>
 
-          <div className="testimonial-layout">
-            {/* Input Form Box (Ledger style parchment) */}
-            <div className="ledger-panel parchment-card rv">
-              <div className="ledger-hdr">
-                <h3 className="ledger-title text-engraved-dark">Tulis Kesan</h3>
-                <button className="webhook-admin-btn" onClick={() => setShowWebhook(v => !v)} title="Pengaturan Webhook Admin">
-                  <GearIcon />
-                </button>
-              </div>
-
-              {showWebhook && (
-                <div className="webhook-config-box">
-                  <label className="ledger-label">Webhook URL (Sinkronisasi)</label>
-                  <input type="text" className="ledger-input" value={webhookUrl}
-                    onChange={e => {
-                      setWebhookUrl(e.target.value);
-                      localStorage.setItem("almuqoddas_webhook_url", e.target.value);
-                    }}
-                    placeholder="https://script.google.com/macros/s/.../exec" />
-                  <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px" }}>
-                    {webhookUrl ? "✓ Mode awan sinkron aktif" : "⚠ Hanya penyimpanan lokal"}
-                  </p>
-                </div>
-              )}
-
-              <div className="ledger-field">
-                <label className="ledger-label">Nama Lengkap (Opsional)</label>
-                <input type="text" className="ledger-input" value={commentName}
-                  onChange={e => setCommentName(e.target.value)} placeholder="Anonim..." />
-              </div>
-
-              <div className="ledger-field">
-                <label className="ledger-label">Pesan / Kesan</label>
-                <textarea className="ledger-textarea" value={draft}
-                  onChange={e => setDraft(e.target.value)}
-                  placeholder="Tuliskan apresiasimu di sini..."
-                  onKeyDown={e => { if (e.ctrlKey && e.key === "Enter") submitComment(); }} />
-              </div>
-
-              <button className="btn-skeuo-3d btn-skeuo-primary" onClick={submitComment} style={{ width: "100%" }}>
-                Kirim Kesan
-              </button>
-            </div>
-
-            {/* Testimonials Wall Feed */}
-            <div className="testimonial-wall rv" style={{ transitionDelay: "150ms" }}>
-              {comments.slice(0, 4).map(c => (
-                <div key={c.id} className="paper-note">
-                  <p className="paper-note-text">"{c.text}"</p>
-                  <div className="paper-note-meta">
-                    <div className="avatar-circle">{c.ini}</div>
-                    <span className="note-author">{c.ini === "AN" ? "Anonim" : `User (${c.ini})`}</span>
-                    <span className="note-time">{c.time}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+    <div className="testimonial-layout">
+      {/* Input Form Box */}
+      <div className="ledger-panel parchment-card rv">
+        <div className="ledger-hdr">
+          <h3 className="ledger-title text-engraved-dark">Tulis Kesan</h3>
+          <button 
+            className="webhook-admin-btn" 
+            onClick={() => setShowWebhook(v => !v)} 
+            title="Pengaturan Webhook Admin"
+          >
+            <GearIcon />
+          </button>
         </div>
-      </section>
+
+        {showWebhook && (
+          <div className="webhook-config-box">
+            <label className="ledger-label">Webhook URL (Sinkronisasi)</label>
+            <input 
+              type="text" 
+              className="ledger-input" 
+              value={webhookUrl}
+              onChange={e => {
+                setWebhookUrl(e.target.value);
+                localStorage.setItem("almuqoddas_webhook_url", e.target.value);
+              }}
+              placeholder="https://script.google.com/macros/s/.../exec" 
+            />
+            <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px" }}>
+              {webhookUrl ? "✓ Mode awan sinkron aktif" : "⚠ Hanya penyimpanan lokal"}
+            </p>
+          </div>
+        )}
+
+        {/* Dropdown / Input Pilih Anggota Yang Dikomentari (Jika Perlu) */}
+        {students && students.length > 0 && (
+          <div className="ledger-field">
+            <label className="ledger-label">Ditujukan Kepada</label>
+            <select 
+              className="ledger-input"
+              value={selectedStudentId || ""}
+              onChange={e => setSelectedStudentId(e.target.value)}
+            >
+              <option value="">-- Pilih Anggota (Opsional) --</option>
+              {students.map(s => (
+                <option key={s.id} value={s.id}>{s.name} ({s.kelas})</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="ledger-field">
+          <label className="ledger-label">Nama Lengkap (Opsional)</label>
+          <input 
+            type="text" 
+            className="ledger-input" 
+            value={commentName}
+            onChange={e => setCommentName(e.target.value)} 
+            placeholder="Anonim..." 
+          />
+        </div>
+
+        <div className="ledger-field">
+          <label className="ledger-label">Pesan / Kesan</label>
+          <textarea 
+            className="ledger-textarea" 
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            placeholder="Tuliskan apresiasimu di sini..."
+            onKeyDown={e => { if (e.ctrlKey && e.key === "Enter") submitComment(); }} 
+          />
+        </div>
+
+        <button 
+          className="btn-skeuo-3d btn-skeuo-primary" 
+          onClick={submitComment} 
+          style={{ width: "100%" }}
+        >
+          Kirim Kesan
+        </button>
+      </div>
+
+      {/* Testimonials Wall Feed */}
+      <div className="testimonial-wall rv" style={{ transitionDelay: "150ms" }}>
+        {comments.length === 0 ? (
+          <p style={{ color: "#fff", opacity: 0.7, textAlign: "center" }}>Belum ada kesan yang ditulis.</p>
+        ) : (
+          comments.slice(0, 4).map(c => (
+            <div key={c.id} className="paper-note">
+              {/* Diperbaiki: memanggil c.pesan bukannya c.text */}
+              <p className="paper-note-text">"{c.pesan}"</p>
+              
+              <div className="paper-note-meta">
+                {/* Diperbaiki: c.name berisi inisial (misal: "RG") */}
+                <div className="avatar-circle">{c.name}</div>
+                
+                {/* Menampilkan Nama Pengirim / Fallback */}
+                <span className="note-author">
+                  {c.rawName || (c.name === "AN" ? "Anonim" : `User (${c.name})`)}
+                </span>
+                
+                {/* Waktu Kirim */}
+                <span className="note-time">{c.time}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* ── GALERI ── */}
       <section id="galeri" className={`sec-spacing section-light${revealed.galeri ? " vis" : ""}`}>
