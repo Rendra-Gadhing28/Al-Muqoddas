@@ -144,7 +144,7 @@ export default function RebanaAlMuqoddas() {
           kelas: (m.kelas || "").toLowerCase(),
           reason : (m.reason || ""),
           quote: m.quote || "Bersama Al-Muqoddas, kami merawat warisan leluhur.",
-          photo: getDriveImageUrl(m.photo),
+          photo: m.photo || null,
         })));
       } catch (e) {
         setErr(e.message || "Gagal mengambil data");
@@ -172,7 +172,7 @@ export default function RebanaAlMuqoddas() {
     const fileId = urlObj.searchParams.get("id");
 
     if (fileId) {
-      return `https://lh3.googleusercontent.com/d/${fileId}=w800`;
+      return `https://lh3.googleusercontent.com/d/${fileId}=w400`;
     }
   } catch (e) {
     // Abaikan jika string bukan URL valid, lanjut ke fallback RegEx
@@ -181,7 +181,7 @@ export default function RebanaAlMuqoddas() {
   // 2. Fallback jika format URL langsung file/d/FILE_ID/view
   const match = driveUrl.match(/[-\w]{25,}/);
   if (match) {
-    return `https://lh3.googleusercontent.com/d/${match[0]}=w800`;
+    return `https://lh3.googleusercontent.com/d/${match[0]}=w400`;
   }
 
   console.log(`[getDriveImageUrl] Tidak dapat mengekstrak ID dari URL: ${driveUrl}`);
@@ -244,14 +244,15 @@ export default function RebanaAlMuqoddas() {
   const fetchComments = async (url) => {
     if (!url) return;
     try {
-      const res = await fetch(`${url}?sheet=Komentar`);
+      const res = await fetch(`${url}?sheet=komentar`);
       const data = await res.json();
       if (data.status === "success" && Array.isArray(data.data))
         setComments(data.data.map(i => ({
-          id: i.id || Math.random(),
-          text: i.pesan || "",
+          timestamp: i.tanggal || Date.now(),
+          id: i.id || cid.current++,
+          name: (i.nama || "AN").substring(0, 2).toUpperCase(),
+          pesan: i.pesan || "",
           time: formatTime(i.tanggal),
-          ini: (i.nama || "AN").substring(0, 2).toUpperCase(),
         })));
     } catch {}
   };
@@ -273,7 +274,7 @@ export default function RebanaAlMuqoddas() {
     if (!draft.trim()) return;
     const name = commentName.trim() || "Anonim";
     const ini = name.substring(0, 2).toUpperCase();
-    setComments(p => [{ id: cid.current++, text: draft.trim(), time: "Baru saja", ini }, ...p]);
+    setComments(p => [{ id: cid.current++, pesan: draft.trim(), time: "Baru saja", name: ini }, ...p]);
     setDraft("");
     setCommentName("");
     if (webhookUrl) {
@@ -560,7 +561,7 @@ export default function RebanaAlMuqoddas() {
                 <div key={m.id} className="member-skeuo-card rv" style={{ transitionDelay: `${(i % 5) * 80}ms` }}>
                   <div className="member-card-inner">
                     {m.photo ? (
-                      <img src={m.photo} alt={m.name} className="member-photo" referrerPolicy="no-referrer" />
+                      <img src={getDriveImageUrl(m.photo)} alt={m.name} className="member-photo" referrerPolicy="no-referrer" />
                     ) : (
                       <div className="member-photo-placeholder"><CamIcon /></div>
                     )}
@@ -569,6 +570,7 @@ export default function RebanaAlMuqoddas() {
                       <span className="member-name-tag">{m.name}</span>
                       <span className="member-role-tag">{m.kelas}</span>
                       <p className="member-quote-tag">"{m.quote}"</p>
+                      <p className="member-quote-tag">"{m.reason}"</p>
                     </div>
                     {/* Default Static Info (slides away on hover) */}
                     <div className="member-static-info">
