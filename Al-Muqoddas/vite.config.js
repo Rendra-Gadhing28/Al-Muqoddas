@@ -8,7 +8,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api/sheets': {
-        target: 'https://script.google.com/macros/s/AKfycbzOPmeOPxlKXw5B6gHVdSI-EW4KggHdoq21hxC5twQe0bZg8MytHhVljwcqFfrdevp7/exec',
+        target: 'https://script.google.com/macros/s/AKfycbz_phI1d9GBuGZW9S9AHuCN8VTGReP6Z72J85I-xvu8LyVLoH-ZyU82n3qJUJKDkmzW/exec',
         changeOrigin: true,
         rewrite: () => '',
         secure: true,
