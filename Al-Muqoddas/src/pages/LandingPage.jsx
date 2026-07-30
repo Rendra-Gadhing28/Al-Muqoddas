@@ -95,7 +95,7 @@ export default function RebanaAlMuqoddas() {
 
   const API_URL = import.meta.env.VITE_APPS_SCRIPT_URL
 
-  const [anggota, setAnggota] = useState([]);
+  const [anggota, setAnggota] = useState([ '']);
   const wali = [{ nama: "Istiqomah S.Ag", Jabatan: "Pembina", Url: istiqomah }];
   const [loadingAnggota, setLoadingAnggota] = useState(true);
 
@@ -143,7 +143,7 @@ export default function RebanaAlMuqoddas() {
           kelas: (m.kelas || "").toLowerCase(),
           reason : (m.reason || ""),
           quote: m.quote || "Bersama Al-Muqoddas, kami merawat warisan leluhur.",
-          photo: m.photo || null,
+          photo: getDriveImageUrl(m.photo) || null,
         })));
 
         
@@ -174,7 +174,6 @@ const getDriveImageUrl = (url) => {
     const fileId = match[0];
     return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
   }
-  
   return url;
 };
 
@@ -586,7 +585,7 @@ function CardPendaftar({ item }) {
                 <div key={m.id} className="member-skeuo-card rv" style={{ transitionDelay: `${(i % 5) * 80}ms` }}>
                   <div className="member-card-inner">
                     {m.photo ? (
-                      <img src={getDriveImageUrl(m.photo)} alt={m.name} className="member-photo" referrerPolicy="no-referrer" />
+                      <img src={m.photo} alt={m.name} className="member-photo" referrerPolicy="no-referrer" />
                     ) : (
                       <div className="member-photo-placeholder"><CamIcon /></div>
                     )}
