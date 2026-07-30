@@ -93,9 +93,7 @@ export default function RebanaAlMuqoddas() {
   const [scrolled, setScrolled] = useState(false);
   const [err, setErr] = useState(null);
 
-  const API_URL = import.meta.env.DEV
-    ? import.meta.env.VITE_APPS_SCRIPT_URL
-    : "https://script.google.com/macros/s/AKfycbz_phI1d9GBuGZW9S9AHuCN8VTGReP6Z72J85I-xvu8LyVLoH-ZyU82n3qJUJKDkmzW/exec";
+  const API_URL = import.meta.env.VITE_APPS_SCRIPT_URL
 
   const [anggota, setAnggota] = useState([]);
   const wali = [{ nama: "Istiqomah S.Ag", Jabatan: "Pembina", Url: istiqomah }];
@@ -131,6 +129,7 @@ export default function RebanaAlMuqoddas() {
         const ct = res.headers.get("content-type");
         if (!ct?.includes("application/json")) throw new Error("Bukan JSON");
         const json = await res.json();
+         console.log(json)
         if (!json || json.status !== "success") throw new Error(json?.message || "Gagal");
         if (!json.data?.length) {
           setErr("Belum ada data anggota");
@@ -146,6 +145,8 @@ export default function RebanaAlMuqoddas() {
           quote: m.quote || "Bersama Al-Muqoddas, kami merawat warisan leluhur.",
           photo: m.photo || null,
         })));
+
+        
       } catch (e) {
         setErr(e.message || "Gagal mengambil data");
         setAnggota([]);
@@ -163,21 +164,36 @@ export default function RebanaAlMuqoddas() {
     return photo;
   }
 
-  function getDriveImageUrl(driveUrl) {
-        if (!driveUrl) return "";
-
-  // Ambil ID dari param ?id=
-  const match = driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
-  const fileId = match ? match[1] : null;
-
-  if (fileId) {
-    // Format uc?export=view sering kali lolos di Vercel jika dipadu referrerPolicy
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  // Helper function langsung di React
+const getDriveImageUrl = (url) => {
+  if (!url) return '';
+  
+  // Ambil ID unik Google Drive menggunakan Regex
+  const match = String(url).match(/[-\w]{25,}/);
+  if (match) {
+    const fileId = match[0];
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
   }
+  
+  return url;
+};
 
-  console.warn("Tidak dapat mengekstrak ID dari URL Google Drive:", driveUrl);
-
-  return driveUrl;
+// Cara pakai di JSX React:
+function CardPendaftar({ item }) {
+  return (
+    <div className="card">
+      <img 
+        src={getDriveImageUrl(item.photo)} 
+        alt={item.name}
+        onError={(e) => {
+          // Fallback jika gambar gagal dimuat/privat
+          e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+        }}
+        style={{ width: '150px', height: '200px', objectFit: 'cover' }}
+      />
+      <h3>{item.name}</h3>
+    </div>
+  );
 }
 
   const [comments, setComments] = useState(() => {
@@ -237,30 +253,15 @@ export default function RebanaAlMuqoddas() {
 
     // Disarankan mengirimkan studentId agar komentar dipisah sesuai orangnya
   const fetchComments = async (url) => {
-    if (!url) return;
     try {
-      
-      const res = await fetch(`${url}?action=getComments`);
-      const data = await res.json();
-
-      if (data.status === "success" && Array.isArray(data.data)) {
-        setComments(
-          data.data.map((i) => {
-            // Mengambil nama dari API (Fallback ke i.name atau i.nama)
-            const rawName = i.name || i.nama || "AN";
-            return {
-              timestamp: i.timestamp || Date.now(),
-              id: i.id || cid.current++,
-              name: rawName.substring(0, 2).toUpperCase(), // Inisial 2 huruf
-              pesan: i.pesan || "",
-              time: i.tanggal ? formatTime(i.tanggal) : "Baru saja",
-            };
-          })
-        );
-      }
-    } catch (err) {
-      console.error("Gagal memuat komentar:", err);
+    const res = await fetch(`${import.meta.env.VITE_APPS_SCRIPT_URL}?action=getComments`);
+    const result = await res.json();
+    if (result.status === 'success') {
+      console.log('Komentar:', result.data);
     }
+  } catch (error) {
+    console.error('Gagal mengambil komentar:', error);
+  }
   };
 
   useEffect(() => {
